@@ -1,45 +1,19 @@
+
 services:
-  # 1. Main Django Web Application (Daphne for ASGI & WebSockets)
   - type: web
     name: django-main-app
-    env: python
-    buildCommand: "./build.sh" # Tells Render to run your build.sh script first!
-    startCommand: "daphne -b 0.0.0.0 -p $PORT rnchealth.asgi:application"
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "./render_start.sh"
     envVars:
       - key: DEBUG
         value: "False"
+      - key: ALLOWED_HOSTS
+        value: "rnchealth.onrender.com,127.0.0.1,localhost"
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
         sync: false
       - key: SECRET_KEY
-        generateValue: true # Generates a secure random fallback Django key automatically
-
-  # 2. Celery Worker Service
-  - type: web
-    name: celery-worker
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    # Runs Celery and boots a mini-web server container side-by-side to allow UptimeRobot pings
-    startCommand: "celery -A rnchealth worker --loglevel=info & python -m http.server $PORT"
-    envVars:
-      - key: DEBUG
-        value: "False"
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-
-  # 3. Celery Beat Service (The Scheduler)
-  - type: web
-    name: celery-beat
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery -A rnchealth beat --loglevel=info & python -m http.server $PORT"
-    envVars:
-      - key: DEBUG
-        value: "False"
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
+        generateValue: true
