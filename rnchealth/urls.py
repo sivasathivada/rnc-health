@@ -17,6 +17,8 @@ urlpatterns = [
     path('api/v1/admin/', include('rnchealth.admin_urls')),
     path('', RedirectView.as_view(url='admin/', permanent=True)),
 
+]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
