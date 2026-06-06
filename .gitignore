@@ -1,0 +1,31 @@
+# Comprehensive Django .gitignore
+
+# 1. Environment Secrets (CRITICAL)
+.env
+*.env
+.env.local
+
+# 2. Python Virtual Environments
+myenv/
+venv/
+.venv/
+env/
+ENV/
+
+# 3. Django Static and Media runtime files
+staticfiles/
+media/
+
+# 4. Local Development Databases
+db.sqlite3
+*.db3
+
+# 5. Python compiled caching files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 6. Operating System temporary files
+.DS_Store
+Thumbs.db
