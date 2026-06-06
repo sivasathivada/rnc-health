@@ -1,9 +1,9 @@
 
-
 import os
 from datetime import timedelta
 from pathlib import Path
 from decouple import config
+import dj_database_url
 
 # Note: EMAIL_BACKEND, MEDIA_URL, MEDIA_ROOT are defined explicitly below
 
@@ -88,6 +88,20 @@ ASGI_APPLICATION = 'rnchealth.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+
+
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+
+
+
+'''
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -99,6 +113,7 @@ DATABASES = {
     }
 }
 
+'''
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
