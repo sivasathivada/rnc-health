@@ -110,7 +110,7 @@ DATABASES = {
         "NAME": config("DB_NAME", default="your_dbname_here"),
         "USER": config("DB_USER", default="postgres"),
         "PASSWORD": config("DB_PASSWORD", default="your_password_here"),
-        "HOST": config("DB_HOST", default="localhost"),
+        "HOST": config("DB_HOST", ),
         "PORT": config("DB_PORT", default=5432, cast=int),  # Added cast=int here
     }
 }
@@ -248,6 +248,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
+    'https://rnchealthlive.onrender.com',
     
     
 ]
