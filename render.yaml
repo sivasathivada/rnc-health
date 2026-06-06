@@ -1,7 +1,7 @@
 
 services:
   - type: web
-    name: django-main-app
+    name: rnchealth
     runtime: python
     plan: free
     buildCommand: "./build.sh"
