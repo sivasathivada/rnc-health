@@ -13,7 +13,6 @@ urlpatterns = [
     path('api/v1/book-appointment/', include('consultations.urls')),
     path('api/v1/payments/', include('payments.urls')),
     path('api/v1/admin/', include('rnchealth.admin_urls')),
-    path('', RedirectView.as_view(url='admin/', permanent=True)),
 
 ]
 
