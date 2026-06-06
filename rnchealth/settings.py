@@ -52,9 +52,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    
-    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -240,20 +240,18 @@ REST_FRAMEWORK = {
 
 
 # CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = False 
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'https://rnchealthlive.onrender.com',
+    'https://rnchealthlive.onrender.com',  # Your production React frontend
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    
-    
 ]
 
-CORS_ALLOWED_CREDENTIALS = True
-# 4. Trust your frontend for secure state-changing requests (like POST /login)
+CORS_ALLOW_CREDENTIALS = True
+# Trust your frontend for secure state-changing requests (like POST /login)
 CSRF_TRUSTED_ORIGINS = [
     "https://rnchealthlive.onrender.com"
 ]
