@@ -245,15 +245,18 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'http://localhost:8080',
+    'https://rnchealthlive.onrender.com',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    'https://rnchealthlive.onrender.com',
     
     
 ]
 
 CORS_ALLOWED_CREDENTIALS = True
+# 4. Trust your frontend for secure state-changing requests (like POST /login)
+CSRF_TRUSTED_ORIGINS = [
+    "https://rnchealthlive.onrender.com"
+]
 
 AUTH_USER_MODEL = 'authentication.User'
 
@@ -488,9 +491,14 @@ if not DEBUG:
     # Protect session and CSRF cookies from being intercepted over HTTP
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_SAMESITE = 'None'
     
     # Protect browser vulnerabilities from cross-site scripting (XSS)
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    #
+
