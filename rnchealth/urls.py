@@ -3,12 +3,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import  settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView   # Use this if you want to redirect to an app path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='admin/', permanent=True)),
-
+    
     path('api/auth/', include('authentication.urls')),
     path('api/v1/consultants/', include('consultants.urls')),
     path('api/v1/patients/', include('patients.urls')),
