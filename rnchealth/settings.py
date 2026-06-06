@@ -4,6 +4,8 @@ from datetime import timedelta
 from pathlib import Path
 from decouple import config
 import dj_database_url
+import ssl
+
 
 # Note: EMAIL_BACKEND, MEDIA_URL, MEDIA_ROOT are defined explicitly below
 
@@ -343,7 +345,11 @@ CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
-                "hosts": [REDIS_URL],
+                # Safely passes SSL context if using a rediss:// URL in production
+                "hosts": [{
+                    "address": REDIS_URL,
+                    "ssl_cert_reqs": None if REDIS_URL.startswith("rediss://") else None
+                }],
 
                 "capacity": 1500,  # Per-channel message capacity
                 "expiry": 60,  # Message expiration time (seconds)
@@ -366,7 +372,7 @@ CELERY_BROKER_URL = config(
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 # Celery settings
-CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
