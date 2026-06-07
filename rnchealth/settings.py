@@ -373,6 +373,19 @@ CELERY_BROKER_URL = config(
 
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
+# If it's a secure connection, make sure the required URL parameter is appended
+CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {
+    'ssl': {
+        'ssl_cert_reqs': 'None' # Safe fallback for Render managed Redis
+    }
+}
+
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'ssl': {
+        'ssl_cert_reqs': 'None'
+    }
+}
+
 # Celery settings
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
