@@ -4,7 +4,7 @@
 set -o errexit
 
 # 1. Spins up worker in background and immediately moves to next line
-celery -A rnchealth worker --loglevel=info --concurrency=1 &
+celery -A rnchealth worker --loglevel=info --concurrency=2 &
 
 # 2. Spins up scheduler in background and immediately moves to next line
 celery -A rnchealth beat --loglevel=info &
