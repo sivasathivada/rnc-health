@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-from .models import CallSession
+#from .models import CallSession
 from .notification_service import NotificationService, NotificationType
 from .call_session_service import CallSessionService
 from .tasks import (
@@ -35,6 +35,12 @@ class ConsultationConsumer(AsyncWebsocketConsumer):
     # Connection settings
     HEARTBEAT_INTERVAL = 30  # seconds
     CONNECTION_TIMEOUT = 300  # seconds
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Dynamically binds the model to the instance once on boot
+        from .models import CallSession
+        self.CallSession = CallSession
     
     
     async def notification_message(self, event):
