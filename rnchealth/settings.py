@@ -373,17 +373,14 @@ CELERY_BROKER_URL = config(
 
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# If it's a secure connection, make sure the required URL parameter is appended
-CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {
-    'ssl': {
-        'ssl_cert_reqs': 'None' # Safe fallback for Render managed Redis
-    }
+# 1. FIX: Corrected variable name and flat dictionary structure for the Result Backend
+CELERY_REDIS_BACKEND_SETTINGS = {
+    'ssl_cert_reqs': 'None' 
 }
 
+# 2. FIX: Flat dictionary structure for the Connection Broker
 CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'ssl': {
-        'ssl_cert_reqs': 'None'
-    }
+    'ssl_cert_reqs': 'None'
 }
 
 # Celery settings
