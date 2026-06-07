@@ -17,3 +17,12 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+    
+
+from celery.signals import task_postrun
+from django.db import connections
+
+@task_postrun.connect
+def close_db_connections(**kwargs):
+    for conn in connections.all():
+        conn.close()

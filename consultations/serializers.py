@@ -169,7 +169,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
            # "consultant_notes",
             "consultation_fee",
             "payment_status",
-            "reminder_sent",
             "is_past",
             "can_start",
             "call_session",
@@ -193,8 +192,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         data['consultant_notes'] = data.get('consultant_notes') or ''
         data["reason_for_visit"] = data.get('reason_for_visit') or ''
         
-        data['reminder_sent'] = bool(data.get('reminder_sent', False))
-        data['is_past'] = bool(data.get('reminder_sent', False))
+        data['is_past'] = bool(data.get("is_past", False))
         data['can_start'] = bool(data.get("can_start", False))
         
         return data

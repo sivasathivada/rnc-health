@@ -103,7 +103,8 @@ DATABASES = {
     )
 }
 
-
+# 🌟 Prevent Celery from holding onto open database slots in the background
+CELERY_DB_REUSE_MAX = 1
 
 '''
 DATABASES = {
@@ -367,36 +368,19 @@ CHANNEL_LAYERS = {
 # Celery for asynchronous background tasks and scheduled jobs
 
 # 1. Grab the complete production connection string directly if available, 
-# 1. Fetch raw URL from configuration environment
-raw_redis_url = config('REDIS_URL', default='')
-
-if raw_redis_url.startswith('rediss://') or raw_redis_url.startswith('redis://'):
-    parsed = urlparse(raw_redis_url)
-    
-    # Extract query parameters safely
-    query_params = parse_qs(parsed.query)
-    query_params['ssl_cert_reqs'] = ['CERT_NONE']
-    
-    # Reconstruct the URL cleanly
-    CELERY_BROKER_URL = urlunparse((
-        parsed.scheme,
-        parsed.netloc,
-        parsed.path,
-        parsed.params,
-        urlencode(query_params, doseq=True),
-        parsed.fragment
-    ))
-else:
-    # Fallback to local development configurations if environment var is empty
-    CELERY_BROKER_URL = f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default=6379)}/0"
+CELERY_BROKER_URL = config(
+    'REDIS_URL', 
+    default=f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default=6379)}/0"
+)
 
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# Keep your validated flat dictionary settings intact
+# 1. FIX: Corrected variable name and flat dictionary structure for the Result Backend
 CELERY_REDIS_BACKEND_SETTINGS = {
     'ssl_cert_reqs': 'None' 
 }
 
+# 2. FIX: Flat dictionary structure for the Connection Broker
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     'ssl_cert_reqs': 'None'
 }
@@ -419,11 +403,6 @@ CELERY_BEAT_SCHEDULE = {
     'cleanup-stale-calls': {
         'task': 'consultations.cleanup_stale_calls',
         'schedule': 600.0,  # 10 minutes
-    },
-    # Check for upcoming video calls and send reminders 10 minutes before
-    'check-appointment-reminders': {
-        'task': 'consultations.check_and_send_10_min_reminders',
-        'schedule': 60.0,  # 1 minute
     },
 }
 

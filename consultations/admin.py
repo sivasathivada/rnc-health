@@ -540,14 +540,12 @@ class AppointmentAdmin(admin.ModelAdmin):
         'scheduled_datetime_display',
         'duration_display',
         'payment_status_badge',
-        'reminder_status',
     ]
     
     list_filter = [
         'status',
         'Appointment_type',
         'payment_status',
-        'reminder_sent',
         ('scheduled_date', admin.DateFieldListFilter),
         # 'created_at',
     ]
@@ -593,10 +591,6 @@ class AppointmentAdmin(admin.ModelAdmin):
             'fields': ('consultation_fee', 'payment_status'),
             'classes': ('wide',),
         }),
-        ('Reminders', {
-            'fields': ('reminder_sent', 'reminder_sent_at'),
-            'classes': ('wide', 'collapse'),
-        }),
         ('Related Call Session', {
             'fields': ('call_session_link',),
             'classes': ('wide', 'collapse'),
@@ -616,7 +610,6 @@ class AppointmentAdmin(admin.ModelAdmin):
         'mark_as_completed',
         'mark_as_no_show',
         'mark_as_cancelled',
-        'send_reminders',
     ]
     
     date_hierarchy = 'scheduled_date'
@@ -704,18 +697,6 @@ class AppointmentAdmin(admin.ModelAdmin):
         )
     payment_status_badge.short_description = 'Payment'
    
-    def reminder_status(self, obj):
-        if obj.reminder_sent:
-            
-            return format_html(
-            '<span style="color: green; font-weight: bold;">{}</span>', 
-            '✓ Sent' 
-        )
-            
-        return format_html(
-           '<span style="color: orange;">{}</span>', 
-            'Pending' 
-    )
     def patient_information(self, obj):
         return format_html(
             '<strong>Patient Notes:</strong><br/>{}<br/><br/>'
@@ -768,17 +749,6 @@ class AppointmentAdmin(admin.ModelAdmin):
         self.message_user(request, f'{updated} appointment(s) cancelled.')
     mark_as_cancelled.short_description = 'Mark as cancelled'
     
-    def send_reminders(self, request, queryset):
-        # Filter appointments within next 24 hours and status is confirmed
-        tomorrow = timezone.now() + timedelta(days=1)
-        reminders_sent = queryset.filter(
-            reminder_sent=False,
-            status='confirmed',
-            scheduled_date__lte=tomorrow.date()
-        ).update(reminder_sent=True, reminder_sent_at=timezone.now().date())
-        
-        self.message_user(request, f'Reminders sent for {reminders_sent} appointment(s).')
-    send_reminders.short_description = 'Send reminders'
     
     def get_queryset(self, request):
         queryset = super().get_queryset(request)

@@ -287,9 +287,6 @@ class Appointment(models.Model):
         default="pending"
     )
     
-    reminder_sent = models.BooleanField(default=False)
-    reminder_sent_at = models.DateTimeField(null = True, blank=True)
-    
     call_session = models.OneToOneField(
         "CallSession",
         on_delete=models.SET_NULL,

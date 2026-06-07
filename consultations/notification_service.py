@@ -48,7 +48,6 @@ class NotificationType(Enum):
     PARTICIPANT_LEFT = "participant_left"
     
     # Appointment notifications
-    APPOINTMENT_REMINDER = "appointment_reminder"
     APPOINTMENT_CREATED = "appointment_created"
     APPOINTMENT_UPDATED = "appointment_updated"
     APPOINTMENT_CANCELLED = "appointment_cancelled"
@@ -530,39 +529,6 @@ class NotificationService:
     
     # ==================== APPOINTMENT NOTIFICATIONS ====================
     
-    @staticmethod
-    def send_appointment_reminder(
-        patient_id: int,
-        consultant_id: int,
-        appointment_id: str,
-        reminder_type: str = "before_15_mins",
-        scheduled_datetime: Optional[datetime] = None
-    ) -> bool:
-        """Send appointment reminder"""
-        time_text = "10 minutes" if reminder_type == "before_10_mins" else "15 minutes"
-        data = {
-            "appointment_id": appointment_id,
-            "reminder_type": reminder_type,
-            "scheduled_datetime": scheduled_datetime.isoformat() if scheduled_datetime else None,
-            "message": f"Reminder: You have an upcoming video call in {time_text}!",
-            "timestamp": timezone.now().isoformat(),
-        }
-        
-        success_patient = NotificationService._send_to_user(
-            patient_id,
-            NotificationType.APPOINTMENT_REMINDER,
-            data,
-            priority=NotificationPriority.HIGH
-        )
-        
-        success_consultant = NotificationService._send_to_user(
-            consultant_id,
-            NotificationType.APPOINTMENT_REMINDER,
-            data,
-            priority=NotificationPriority.HIGH
-        )
-        
-        return success_patient and success_consultant
     
     @staticmethod
     def send_call_session_ready(

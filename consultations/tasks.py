@@ -363,43 +363,6 @@ def generate_call_analytics(self, session_id: str):
 # ==================== APPOINTMENT-BASED CALL TASKS ====================
 
 @shared_task(
-    name='consultations.send_appointment_reminder',
-    max_retries=3,
-    default_retry_delay=60,
-    bind=True
-)
-def send_appointment_reminder(self, appointment_id: str, reminder_type: str = 'before_15_mins'):
-    """
-    Send appointment reminders (15 mins before, 5 mins before, etc.).
-    Part of appointment lifecycle notifications.
-    """
-    try:
-        appointment = Appointment.objects.select_related(
-            'patient', 'consultant__user'
-        ).get(id=appointment_id)
-        
-        if appointment.status not in ['confirmed', 'scheduled']:
-            logger.info(f"Appointment {appointment_id} not active, skipping reminder")
-            return
-        
-        NotificationService.send_appointment_reminder(
-            patient_id=appointment.patient_id,
-            consultant_id=appointment.consultant.user_id,
-            appointment_id=appointment_id,
-            reminder_type=reminder_type,
-            scheduled_datetime=appointment.scheduled_datetime
-        )
-        
-        logger.info(f"Appointment reminder sent: {appointment_id} ({reminder_type})")
-        
-    except Appointment.DoesNotExist:
-        logger.error(f"Appointment {appointment_id} not found")
-    except Exception as e:
-        logger.error(f"Error sending appointment reminder: {str(e)}", exc_info=True)
-        raise self.retry(exc=e)
-
-
-@shared_task(
     name='consultations.auto_create_call_session',
     max_retries=2,
     bind=True
@@ -581,60 +544,4 @@ def monitor_active_calls(self):
         logger.error(f"Error monitoring active calls: {str(e)}", exc_info=True)
 
 
-@shared_task(
-    name='consultations.check_and_send_10_min_reminders',
-    max_retries=3,
-    default_retry_delay=60,
-    bind=True
-)
-def check_and_send_10_min_reminders(self):
-    """
-    Check for confirmed/scheduled appointments starting in 10 minutes and send reminders.
-    """
-    try:
-        now = timezone.now()
-        # Query appointments for today, yesterday, and tomorrow to limit database size,
-        # then calculate the exact time difference in python.
-        today = now.date()
-        yesterday = today - timedelta(days=1)
-        tomorrow = today + timedelta(days=1)
-        
-        appointments = Appointment.objects.filter(
-            status__in=['confirmed', 'scheduled'],
-            reminder_sent=False,
-            scheduled_date__range=(yesterday, tomorrow)
-        ).select_related('patient', 'consultant__user')
-        
-        count = 0
-        for appt in appointments:
-            appt_time = appt.scheduled_datetime
-            diff = appt_time - now
-            
-            # Send reminder if appointment starts in 9 to 11 minutes
-            if timedelta(minutes=9) <= diff <= timedelta(minutes=11):
-                try:
-                    with transaction.atomic():
-                        # Lock the row to prevent race conditions if multiple workers run this
-                        locked_appt = Appointment.objects.select_for_update().get(id=appt.id)
-                        if not locked_appt.reminder_sent:
-                            locked_appt.reminder_sent = True
-                            locked_appt.reminder_sent_at = now
-                            locked_appt.save(update_fields=['reminder_sent', 'reminder_sent_at'])
-                            
-                            NotificationService.send_appointment_reminder(
-                                patient_id=locked_appt.patient_id,
-                                consultant_id=locked_appt.consultant.user_id,
-                                appointment_id=str(locked_appt.id),
-                                reminder_type='before_10_mins',
-                                scheduled_datetime=locked_appt.scheduled_datetime
-                            )
-                            count += 1
-                except Exception as ex:
-                    logger.error(f"Error sending reminder for appointment {appt.id}: {str(ex)}")
-                    
-        logger.info(f"Processed 10-minute reminders: sent {count} notifications.")
-        return {'sent': count}
-        
-    except Exception as e:
-        logger.error(f"Error in check_and_send_10_min_reminders: {str(e)}", exc_info=True)
-        raise self.retry(exc=e)
+
