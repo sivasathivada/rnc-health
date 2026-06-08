@@ -344,26 +344,22 @@ if DEBUG:
 '''
 
 # Production: Use Redis for distributed channel layer (multiple processes, scalable)
+# 1. Keep your clean REDIS_URL environment variable string readout
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
-# 1. Parse the URL components dynamically
-parsed_redis = urlparse(REDIS_URL)
-
-# 2. Build a reliable configuration dictionary
+# 2. Feed channels_redis a raw URL string directly inside the hosts list
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [{
-                # Extract clean hostname and port (e.g., 'your-redis.upstash.io', 6379)
-                "address": (parsed_redis.hostname, parsed_redis.port or 6379),
-                "password": parsed_redis.password,
-                "username": parsed_redis.username or "default",
-                # Pass a native Python SSL context only if using secured rediss://
-                "ssl": {
-                    "cert_reqs": ssl.CERT_NONE
-                } if REDIS_URL.startswith("rediss://") else False
-            }],
+            # 🌟 FIX: Pass the raw string URL directly to satisfy .from_url()
+            "hosts": [REDIS_URL],
+            
+            # 🌟 FIX: Inject the native Python SSL Context directly into the pool parameters
+            "redis_field_kwargs": {
+                "ssl_cert_reqs": ssl.CERT_NONE
+            } if REDIS_URL.startswith("rediss://") else {},
+
             "capacity": 1500,
             "expiry": 60,
             "group_expiry": 86400,
