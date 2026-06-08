@@ -1,5 +1,6 @@
 
 import os
+import ssl
 from celery import Celery
 
 # Set the default Django settings module for the 'celery' program.
@@ -17,6 +18,15 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
+
+# so the worker doesn't crash when passing notification events back to Daphne
+app.conf.broker_use_ssl = {
+    'ssl_cert_reqs': ssl.CERT_NONE
+}
+app.conf.redis_backend_use_ssl = {
+    'ssl_cert_reqs': ssl.CERT_NONE
+}
     
 
 from celery.signals import task_postrun

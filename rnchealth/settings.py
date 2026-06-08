@@ -5,7 +5,7 @@ from pathlib import Path
 from decouple import config
 import dj_database_url
 import ssl
-from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+from urllib.parse import urlparse
 
 
 
@@ -342,27 +342,34 @@ if DEBUG:
         },
     }
 '''
-# Production: Use Redis for distributed channel layer (multiple processes, scalable)
 
+# Production: Use Redis for distributed channel layer (multiple processes, scalable)
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
+# 1. Parse the URL components dynamically
+parsed_redis = urlparse(REDIS_URL)
+
+# 2. Build a reliable configuration dictionary
 CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                # Safely passes SSL context if using a rediss:// URL in production
-                "hosts": [{
-                    "address": REDIS_URL,
-                    "ssl_cert_reqs": None if REDIS_URL.startswith("rediss://") else None
-                }],
-
-                "capacity": 1500,  # Per-channel message capacity
-                "expiry": 60,  # Message expiration time (seconds)
-                "group_expiry": 86400,  # Group expiration time (24 hours)
-            },
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                # Extract clean hostname and port (e.g., 'your-redis.upstash.io', 6379)
+                "address": (parsed_redis.hostname, parsed_redis.port or 6379),
+                "password": parsed_redis.password,
+                "username": parsed_redis.username or "default",
+                # Pass a native Python SSL context only if using secured rediss://
+                "ssl": {
+                    "cert_reqs": ssl.CERT_NONE
+                } if REDIS_URL.startswith("rediss://") else False
+            }],
+            "capacity": 1500,
+            "expiry": 60,
+            "group_expiry": 86400,
         },
-    }
-
+    },
+}
 
 # ==================== CELERY CONFIGURATION ====================
 # Celery for asynchronous background tasks and scheduled jobs
