@@ -253,6 +253,9 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
 ]
 
+# Tell Django Channels to trust requests coming from your frontend site
+ALLOWED_REDIRECT_HOSTS = ["rnchealthlive.onrender.com"]
+
 CORS_ALLOW_CREDENTIALS = True
 # Trust your frontend for secure state-changing requests (like POST /login)
 CSRF_TRUSTED_ORIGINS = [
