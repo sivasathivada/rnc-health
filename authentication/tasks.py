@@ -49,7 +49,7 @@ def send_verification_email_task(user_id):
             subject=subject,
             message=plain_message,
             html_message=html_message,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@rnchealth.com'),
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@rnchealthlive.onrender.com'),
             recipient_list=[user.email],
             fail_silently=False
         )

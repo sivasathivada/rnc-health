@@ -288,13 +288,13 @@ EMAIL_USE_SSL = True    # Change to True
 
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD') # App Password
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@rnchealthlive.onrender.com')
 
-EMAIL_TIMEOUT = 10
+
 
 #APP Configuration
 APP_NAME = 'Rnchealth App'
-DOMAIN_URL = config('DOMAIN_URL', 'http://127.0.0.1:8000')
+DOMAIN_URL = config('DOMAIN_URL', default='http://127.0.0.1:8000')
 
 
 #django admin reorder configuration apps for features
