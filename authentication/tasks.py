@@ -24,7 +24,7 @@ def send_verification_email_task(user_id):
         
         subject = f"Verify your email - {getattr(settings, 'APP_NAME', 'Rnchealth App')}"
         
-        verification_url = f"{getattr(settings, 'DOMAIN_URL', 'http://127.0.0.1:8000')}/api/auth/verify-email/{verification_token.token}"
+        verification_url = f"{getattr(settings, 'DOMAIN_URL', 'http://127.0.0.1:8000')}/api/auth/verify-email-page/{verification_token.token}"
         
         html_message = render_to_string('emails/email_verification.html', {
             'user': user,

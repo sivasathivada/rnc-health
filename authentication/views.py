@@ -13,10 +13,17 @@ from django.contrib.auth import  get_user_model
 from .serializers import UserRegistrationSerializer, LoginSerailizers, UserSerializer, ResendVerificationSerializer, EmailVerificationSerializer
 from .services import AuthenticationService, EmailVerificationService
 from django.contrib.messages import success
+from .models import EmailVerificationToken
 
 
 
 User = get_user_model()
+
+def verify_email_page(request, token):
+    """
+    Serve the email verification page template
+    """
+    return render(request, 'verify_email.html', {'token': token})
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -215,6 +222,41 @@ def verify_email(request,token):
     
     '''
     
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_email_details(request, token):
+    """
+    GET endpoint to fetch user details from verification token
+    Used to display user information on the verification page
+    """
+    try:
+        verification_token = EmailVerificationToken.objects.get(token=token)
+        
+        if not verification_token.is_valid:
+            if verification_token.is_expired:
+                error_msg = "Verification link has expired. Please request a new verification email."
+            else:
+                error_msg = "Verification link has already been used."
+            return Response({
+                'error': error_msg,
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = verification_token.user
+        return Response({
+            'user': UserSerializer(user).data,
+            'verified': user.is_verified,
+        }, status=status.HTTP_200_OK)
+        
+    except EmailVerificationToken.DoesNotExist:
+        return Response({
+            'error': 'Invalid or expired verification link',
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'error': f'Failed to fetch verification details: {str(e)}',
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

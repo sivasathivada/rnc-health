@@ -18,7 +18,9 @@ urlpatterns = [
     path('profile/', views.user_profile, name = 'user_profile'),
 
     #Email verification endpoints
+    path('verify-email-page/<str:token>/', views.verify_email_page, name = "verify_email_page"),
     path('verify-email/<str:token>/', views.verify_email, name = "verify_email"),
+    path('verify-email-details/<str:token>/', views.verify_email_details, name = "verify_email_details"),
     path(
         "resend_verification/",
         views.resend_verification_email,

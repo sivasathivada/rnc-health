@@ -387,15 +387,13 @@ CELERY_BROKER_URL = config(
 
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# 1. FIX: Corrected variable name and flat dictionary structure for the Result Backend
-CELERY_REDIS_BACKEND_SETTINGS = {
-    'ssl_cert_reqs': 'None' 
+# THE SECURITY FIX: Verify certificates using Render's native Ubuntu cert pool
+CELERY_BROKER_USE_SSL = {
+    'ssl_cert_reqs': 'CERT_REQUIRED',           # Change from NONE to REQUIRED
+    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'  # 🔒 Standard path on Render Linux instances
 }
 
-# 2. FIX: Flat dictionary structure for the Connection Broker
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'ssl_cert_reqs': 'None'
-}
+CELERY_REDIS_BACKEND_USE_SSL = CELERY_BROKER_USE_SSL
 
 # Celery settings
 CELERY_ACCEPT_CONTENT = ['json']
