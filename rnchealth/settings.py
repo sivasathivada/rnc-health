@@ -386,13 +386,16 @@ CELERY_BROKER_URL = config(
 )
 
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-#Use standard ssl module flags instead of plain strings
-CELERY_BROKER_USE_SSL = {
-    'ssl_cert_reqs': ssl.CERT_REQUIRED,           # Use the actual Python SSL constant
-    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'  # Kept clean for Render Linux instances
+
+# 1. FIX: Corrected variable name and flat dictionary structure for the Result Backend
+CELERY_REDIS_BACKEND_SETTINGS = {
+    'ssl_cert_reqs': 'None',
 }
 
-CELERY_REDIS_BACKEND_USE_SSL = CELERY_BROKER_USE_SSL
+# 2. FIX: Flat dictionary structure for the Connection Broker
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'ssl_cert_reqs': 'None'
+}
 
 # Celery settings
 CELERY_ACCEPT_CONTENT = ['json']
