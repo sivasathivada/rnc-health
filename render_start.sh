@@ -10,11 +10,15 @@ pkill -f "celery -A rnchealth" || true
 echo "Running Migrations..."
 python manage.py migrate
 
+echo "Installing dependencies..."
+# THIS IS HOW PIP INSTALLS IT (with quotes)
+pip install "django-anymail[brevo]==15.0"
+
 echo "Starting Daphne Web Server..."
 # Run Daphne in the background (&)
 daphne -b 0.0.0.0 -p $PORT rnchealth.asgi:application &
 
-# 🌟 THE CRITICAL FIX: Wait for the network socket and environment to settle
+# THE CRITICAL FIX: Wait for the network socket and environment to settle
 echo "Waiting for network layers to stabilize..."
 sleep 5
 

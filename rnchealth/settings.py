@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'channels',
+    "anymail',
     
     
 ]
@@ -278,19 +279,15 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="your-app-password")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="rnchealthapp@gmail.com")
 '''
 
-#  SWITCH TO PORT 465 (SSL) TO BYPASS RENDER NETWORK BLOCKAGE
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 
-EMAIL_PORT = 465        # Change from 587 to 465
-EMAIL_USE_TLS = False   # Change to False
-EMAIL_USE_SSL = True    # Change to True
+ANYMAIL = {
+    "BREVO_API_KEY": config("BREVO_API_KEY"),
+}
 
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD') # App Password
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@rnchealthlive.onrender.com')
+DEFAULT_FROM_EMAIL = config("EMAIL_HOST_USER")
 
-EMAIL_TIMEOUT = 30
+
 
 #APP Configuration
 APP_NAME = 'Rnchealth App'
@@ -520,5 +517,5 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
-    #
+    
 
