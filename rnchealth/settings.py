@@ -386,11 +386,10 @@ CELERY_BROKER_URL = config(
 )
 
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-
-# THE SECURITY FIX: Verify certificates using Render's native Ubuntu cert pool
+#Use standard ssl module flags instead of plain strings
 CELERY_BROKER_USE_SSL = {
-    'ssl_cert_reqs': 'CERT_REQUIRED',           # Change from NONE to REQUIRED
-    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'  # 🔒 Standard path on Render Linux instances
+    'ssl_cert_reqs': ssl.CERT_REQUIRED,           # Use the actual Python SSL constant
+    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'  # Kept clean for Render Linux instances
 }
 
 CELERY_REDIS_BACKEND_USE_SSL = CELERY_BROKER_USE_SSL
