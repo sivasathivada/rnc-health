@@ -1015,8 +1015,9 @@ class ConsultationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_call_session(self, session_id: str) -> Optional[CallSession]:
         """Get call session from database"""
-        from .models import CallSession  
+        from .models import CallSession
         try:
+            from .models import CallSession
             return CallSession.objects.select_related(
                 'consultant', 'patient'
             ).get(session_id=session_id)

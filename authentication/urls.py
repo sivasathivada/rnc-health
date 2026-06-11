@@ -7,6 +7,7 @@ urlpatterns = [
     # AUTHENTICATION ENDPOINTS
     path('register/', views.register, name = 'register'),
     path('login/', views.login, name ='login'),
+    path('google/', views.google_login, name='google_login'),
     path('logout/', views.logout, name = 'logout'),
 
      # Token management

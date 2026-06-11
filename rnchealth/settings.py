@@ -104,7 +104,7 @@ DATABASES = {
     )
 }
 
-# 🌟 Prevent Celery from holding onto open database slots in the background
+# Prevent Celery from holding onto open database slots in the background
 CELERY_DB_REUSE_MAX = 1
 
 '''
@@ -292,6 +292,7 @@ DEFAULT_FROM_EMAIL = config("EMAIL_HOST_USER")
 #APP Configuration
 APP_NAME = 'Rnchealth App'
 DOMAIN_URL = config('DOMAIN_URL', default='http://127.0.0.1:8000')
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
 
 
 #django admin reorder configuration apps for features
@@ -501,7 +502,7 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
     # Force all connections over HTTPS
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
     
     # Protect session and CSRF cookies from being intercepted over HTTP
     SESSION_COOKIE_SECURE = True
