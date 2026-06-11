@@ -181,7 +181,10 @@ if not DEBUG:
     AWS_SECRET_ACCESS_KEY = config("SUPABASE_S3_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = config("SUPABASE_STORAGE_BUCKET_NAME", default="rncmedia")
     AWS_S3_ENDPOINT_URL = config("SUPABASE_S3_ENDPOINT_URL")
-    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.supabase.co"
+    # Parse the host from AWS_S3_ENDPOINT_URL (e.g. '<project-ref>.supabase.co')
+    # and append the public bucket path so URLs resolve to the public Supabase storage endpoint.
+    endpoint_host = urlparse(AWS_S3_ENDPOINT_URL).netloc
+    AWS_S3_CUSTOM_DOMAIN = f"{endpoint_host}/storage/v1/object/public/{AWS_STORAGE_BUCKET_NAME}"
     AWS_DEFAULT_ACL = None
 
     # Settings required for Supabase routing behavior

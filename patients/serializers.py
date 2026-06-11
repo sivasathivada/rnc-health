@@ -47,9 +47,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.avatar.url)
-            # Fallback: build absolute URL manually
-            from django.conf import settings
-            return f"{settings.MEDIA_URL}{obj.avatar.name}"
+            return obj.avatar.url
         return None
     
 class PatientProfileUpdateSerializer(serializers.ModelSerializer):
