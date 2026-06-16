@@ -281,10 +281,13 @@ class CallSessionListView(generics.ListAPIView):
 class ConsultantCallSessionDetailView(generics.RetrieveAPIView):
     """Get details of a specific call session"""
     serializer_class = CallSessionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsConsultant]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return CallSession.objects.filter(consultant=self.request.user)
+        from django.db.models import Q
+        return CallSession.objects.filter(
+            Q(consultant=self.request.user) | Q(patient=self.request.user)
+        )
 '''
 
 class ConsultantCallSessionStartView(APIView):
