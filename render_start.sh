@@ -1,21 +1,17 @@
-
 #!/usr/bin/env bash
-# exit on error
 set -o errexit
 
-echo "==> Cleaning up any lingering background Celery processes..."
-# Forcefully kill any running celery processes owned by the render user
+echo "Cleaning up processes..."
 pkill -f "celery -A rnchealth" || true
 
-echo "Starting Daphne Web Server..."
-# Run Daphne in the background (&)
-daphne -b 0.0.0.0 -p $PORT rnchealth.asgi:application &
-
-# THE CRITICAL FIX: Wait for the network socket and environment to settle
-echo "Waiting for network layers to stabilize..."
-sleep 5
-
-echo "Starting Celery Worker & Beat..."
-# Run Celery Worker using the solo pool to prevent Python concurrency network blockages
+# Start Celery components FIRST in the background
+echo "Starting Celery Backend Layer..."
 celery -A rnchealth worker --pool=solo --loglevel=info &
-celery -A rnchealth beat --loglevel=info
+celery -A rnchealth beat --loglevel=info &
+
+# Give Celery 2 seconds to establish its Redis link
+sleep 2
+
+# Start Daphne LAST in the foreground (No & at the end)
+echo "Launching Daphne ASGI Application..."
+daphne -b 0.0.0.0 -p $PORT rnchealth.asgi:application

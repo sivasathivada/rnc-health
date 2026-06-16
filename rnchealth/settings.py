@@ -373,9 +373,9 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [REDIS_URL],
-            "capacity": 1500,
-            "expiry": 60,
-            "group_expiry": 86400,
+            "capacity": 200,      # Reduced from 1500. Lower memory buffers = fewer operations
+            "expiry": 15,          #Reduced from 60. Drop old messages quickly so Redis doesn't bloat
+            "group_expiry": 3600,
         },
     },
 }
