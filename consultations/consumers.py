@@ -278,6 +278,7 @@ class ConsultationConsumer(AsyncWebsocketConsumer):
                 'connection_established': self.handle_connection_established,
                 'connection_quality': self.handle_connection_quality,
                 'reconnection_attempt': self.handle_reconnection_attempt,
+                'call_mode_changed': self.handle_call_mode_changed,
                 
                 # Keep-alive
                 'ping': self.handle_ping,
@@ -861,6 +862,17 @@ class ConsultationConsumer(AsyncWebsocketConsumer):
         
         except Exception as e:
             logger.error(f"Error in handle_connection_quality: {str(e)}")
+            
+    async def handle_call_mode_changed(self, data):
+        """Handle call mode changed (video/audio)"""
+        try:
+            session_id = data.get('session_id')
+            mode = data.get('mode')
+            if not session_id or mode not in ['video', 'audio']:
+                return
+            await self.update_call_type(session_id, mode)
+        except Exception as e:
+            logger.error(f"Error in handle_call_mode_changed: {str(e)}")
     
     async def handle_reconnection_attempt(self, data):
         """Handle reconnection attempt"""
@@ -1110,6 +1122,20 @@ class ConsultationConsumer(AsyncWebsocketConsumer):
             CallSessionService.update_connection_quality(session_id, quality, stats)
         except Exception as e:
             logger.error(f"Error updating connection quality: {str(e)}")
+            
+    @database_sync_to_async
+    def update_call_type(self, session_id: str, call_type: str):
+        """Update call session type (video/audio) in database"""
+        from .models import CallSession
+        try:
+            call_session = CallSession.objects.get(session_id=session_id)
+            call_session.call_type = call_type
+            call_session.save(update_fields=['call_type'])
+            logger.info(f"Updated call {session_id} type to {call_type}")
+        except CallSession.DoesNotExist:
+            logger.error(f"Call session {session_id} not found for type update")
+        except Exception as e:
+            logger.error(f"Error updating call type: {str(e)}")
     
     @database_sync_to_async
     def _handle_session_cleanup(self, session_id: str):

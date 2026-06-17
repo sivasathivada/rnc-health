@@ -168,7 +168,7 @@ class CallSession(models.Model):
     def record_connection_established(self):
         """Record when WebRTC connection is fully established"""
         self.connection_established_at = timezone.now()
-        self.save(update_fields=['connection_established_at'])
+        self.save(update_fields=['connection_established_at', 'connection_type'])
     
     def add_ice_candidate(self):
         """Increment ICE candidate count"""
@@ -185,7 +185,14 @@ class CallSession(models.Model):
         if self.webrtc_stats is None:
             self.webrtc_stats = {}
         self.webrtc_stats.update(stats_dict)
-        self.save(update_fields=['webrtc_stats', 'last_ping_timestamp'])
+        
+        # Sync connection_type from stats if present
+        conn_type = stats_dict.get('connection_type')
+        if conn_type in ['p2p', 'relay', 'unknown']:
+            self.connection_type = conn_type
+            
+        self.last_ping_timestamp = timezone.now()
+        self.save(update_fields=['webrtc_stats', 'last_ping_timestamp', 'connection_quality', 'connection_type'])
     
     @property
     def connection_health(self):
