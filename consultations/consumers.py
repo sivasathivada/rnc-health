@@ -1114,6 +1114,7 @@ class ConsultationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _handle_session_cleanup(self, session_id: str):
         """Internal method to clean up session"""
+        from .models import CallSession
         try:
             call_session = CallSession.objects.get(session_id=session_id)
             if call_session.status == 'ongoing':

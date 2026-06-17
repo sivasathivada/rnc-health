@@ -282,6 +282,8 @@ class ConsultantCallSessionDetailView(generics.RetrieveAPIView):
     """Get details of a specific call session"""
     serializer_class = CallSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'session_id'
+    lookup_url_kwarg = 'session_id'
 
     def get_queryset(self):
         from django.db.models import Q
