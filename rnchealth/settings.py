@@ -366,122 +366,72 @@ if DEBUG:
 # 1. Keep your clean REDIS_URL environment variable string readout
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
-
-
-# 2. Pass it directly as a raw host string list without any dictionary wrapping
+# Dynamically change redis:// to rediss:// for production if Render/Railway requires it
+if REDIS_URL.startswith("redis://") and "127.0.0.1" not in REDIS_URL and "localhost" not in REDIS_URL:
+    REDIS_URL = REDIS_URL.replace("redis://", "rediss://", 1)
 
 CHANNEL_LAYERS = {
-
     "default": {
-
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-
         "CONFIG": {
-
-            "hosts": [REDIS_URL],
-
+            # Fix: Wrap the URL in a dictionary to pass the SSL bypass parameter
+            "hosts": [{
+                "address": REDIS_URL,
+                "ssl_cert_reqs": None,  # <--- CRITICAL: Stops Django Channels from stalling on SSL
+            }],
             "capacity": 1500,
-
             "expiry": 60,
-
             "group_expiry": 86400,
-
         },
-
     },
-
 }
-
-
 
 # ==================== CELERY CONFIGURATION ====================
-
-# Celery for asynchronous background tasks and scheduled jobs
-
-
-
-# 1. Grab the complete production connection string directly if available,
-
-CELERY_BROKER_URL = config(
-
-    'REDIS_URL',
-
-    default=f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default=6379)}/0"
-
-)
-
-
-
+CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-
-
-# THE CORRECT STRING FOR REDIS-PY: Use lowercase 'required'
-
+# Fix: Switch from 'required' to None to stop the 60-second handshake timeout on Railway's proxy
 CELERY_BROKER_USE_SSL = {
-
-    'ssl_cert_reqs': 'required',                   # Fixes the Redis Error instantly
-
-    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'  # Kept intact for Render's OS environment
-
+    'ssl_cert_reqs': None
 }
-
-
 CELERY_REDIS_BACKEND_USE_SSL = CELERY_BROKER_USE_SSL
 
-
-
-# Celery settings
-
-CELERY_ACCEPT_CONTENT = ['json']
-
-CELERY_TASK_SERIALIZER = 'json'
-
-CELERY_RESULT_SERIALIZER = 'json'
-
-CELERY_TIMEZONE = 'UTC'
-
-
-
-# Task settings
-
-CELERY_TASK_TRACK_STARTED = True
-
-CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes hard limit
-
-CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes soft limit
-
-CELERY_TASK_IGNORE_RESULT = False
-
-
-
-# Celery Beat Settings (Scheduled Tasks)
-
-CELERY_BEAT_SCHEDULE = {
-
-    # Clean up stale call sessions every 10 minutes
-
-    'cleanup-stale-calls': {
-
-        'task': 'consultations.cleanup_stale_calls',
-
-        'schedule': 600.0,  # 10 minutes
-
-    },
-
+# Fix: Also pass it to transport options to ensure the underlying redis-py client respects it
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'ssl': {
+        'ssl_cert_reqs': None
+    }
+}
+CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {
+    'ssl': {
+        'ssl_cert_reqs': None
+    }
 }
 
+# Celery settings
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
+# Task settings
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  
+CELERY_TASK_IGNORE_RESULT = False
+
+# Celery Beat Settings
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-stale-calls': {
+        'task': 'consultations.cleanup_stale_calls',
+        'schedule': 600.0,  
+    },
+}
 
 # Celery worker settings
-
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
-
 CELERY_WORKER_LOG_FORMAT = '[%(levelname)s/%(processName)s] %(message)s'
-
-
 
 # ==================== LOGGING CONFIGURATION ====================
 # Reduces terminal spam from channels and daphne WebSocket messages
@@ -556,18 +506,20 @@ CACHES = {
     }
 }
 
-#SSL/TLS CONFIGURATION FOR PRODUCTION
+#SSL/TLS CONFIGURATION FOR PRODUCTION(Security settings to ensure secure connections and protect against common web vulnerabilities)
 
 if not DEBUG:
-    # Tell Django your app is running behind a secure proxy load balancer
+    # Tell Django your app is running behind Render's secure proxy load balancer
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
-    # Force all connections over HTTPS
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    # FIX: Set to False on Render to keep Django from intercepting and breaking WS/WSS connections
+    SECURE_SSL_REDIRECT = False 
     
     # Protect session and CSRF cookies from being intercepted over HTTP
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    
+    # Required if your frontend is hosted on a completely different domain (e.g., Vercel, Netlify)
     SESSION_COOKIE_SAMESITE = 'None'
     CSRF_COOKIE_SAMESITE = 'None'
     
@@ -576,6 +528,3 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-
-    
-
