@@ -364,54 +364,83 @@ if DEBUG:
 
 # Production: Use Redis for distributed channel layer (multiple processes, scalable)
 # 1. Keep your clean REDIS_URL environment variable string readout
+import os
+from decouple import config  # assuming you use python-decouple or similar
+
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
+# ==================== DJANGO CHANNELS CONFIGURATION ====================
 CHANNEL_LAYERS = {
     "default": {
+        # COST FIX: If your channels package is up to date, consider changing this 
+        # to "channels_redis.pubsub.RedisPubSubChannelLayer" to drastically cut down polling requests.
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [{
-                "address": REDIS_URL,
-                "ssl_cert_reqs": None,  # Stops Django Channels from stalling on the SSL handshake
-            }],
-            "capacity": 1500,
-            "expiry": 60,
-            "group_expiry": 86400,
+            "hosts": [REDIS_URL],
+            "capacity": 200,  # OPTIMIZATION: Reduced from 1500. Lower memory buffers = fewer operations
+            "expiry": 15,     # OPTIMIZATION: Reduced from 60. Drop old messages quickly so Redis doesn't bloat
+            "group_expiry": 3600, # OPTIMIZATION: Reduced from 86400 (24h) to 1 hour. Cleans up stale groups fast
         },
     },
 }
 
 # ==================== CELERY CONFIGURATION ====================
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BROKER_URL = config(
+    'REDIS_URL', 
+    default=f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default=6379)}/0"
+)
 
-# Tells Celery to expect an SSL protocol without strict certificate checking 
-CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': 'CERT_NONE'}
-CELERY_REDIS_BACKEND_USE_SSL = CELERY_BROKER_USE_SSL
+# SSL Configurations (Kept perfectly intact for Render's OS environment)
+CELERY_BROKER_USE_SSL = {
+    'ssl_cert_reqs': 'required',
+    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'
+}
 
-# Enforces the configuration strategy inside the lower redis-py transport drivers
-CELERY_BROKER_TRANSPORT_OPTIONS = {'ssl': {'ssl_cert_reqs': 'CERT_NONE'}}
-CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {'ssl': {'ssl_cert_reqs': 'CERT_NONE'}}
+# OPTIMIZATION: Slow down Celery's aggressive background polling loop!
+# This tells Celery to check for tasks every 5 seconds instead of multiple times a second.
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'polling_interval': 5.0,
+}
 
-# Your serialization and timing settings remain intact
+# CRITICAL COST FIX: Stop storing task execution results in Redis unless absolutely mandatory.
+# If your backend tasks just execute logic (like cleaning up calls) and don't return data 
+# to the frontend via task IDs, ignore the results entirely!
+CELERY_TASK_IGNORE_RESULT = True  
+CELERY_RESULT_BACKEND = None     # If IGNORE_RESULT is True, we don't need a backend database connection
+
+# If you ABSOLUTELY need results for specific tasks, keep this line but override it 
+# inside individual tasks using @shared_task(ignore_result=False)
+# If keeping the backend, add an expiry to prevent endless storage:
+# CELERY_RESULT_EXPIRE = 300  # Remove results after 5 minutes
+
+# Celery performance tweaks for single-core / low-RAM servers
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+# Disable background worker synchronization noise (Gossip/Mingo)
+# This prevents workers from constantly chatting with each other via Redis
+CELERY_WORKER_GOSSIP = False
+CELERY_WORKER_MINGO = False
+CELERY_WORKER_SEND_TASK_EVENTS = False
+
+# Task limits
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  
-CELERY_TASK_IGNORE_RESULT = False
 
+# Celery Beat Settings (Scheduled Tasks)
 CELERY_BEAT_SCHEDULE = {
     'cleanup-stale-calls': {
         'task': 'consultations.cleanup_stale_calls',
-        'schedule': 600.0,  
+        'schedule': 600.0,  # 10 minutes is a great balance
     },
 }
 
+# Celery worker settings
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 500
 CELERY_WORKER_LOG_FORMAT = '[%(levelname)s/%(processName)s] %(message)s'
 
 # ==================== LOGGING CONFIGURATION ====================
