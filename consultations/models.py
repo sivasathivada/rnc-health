@@ -391,6 +391,11 @@ class Appointment(models.Model):
         )
             
             
+    @property
+    def appointment_type(self):
+        """Safe fallback property to avoid AttributeError when accessing lowercase appointment_type"""
+        return self.Appointment_type
+
     def create_call_session(self):
         if self.call_session:
             return self.call_session
@@ -400,7 +405,7 @@ class Appointment(models.Model):
             session_id = session_id,
             consultant = self.consultant.user,
             patient = self.patient,
-            call_type = "video" if self.Appointment_type == "video" else "audio",
+            call_type = "video",
             scheduled_at = self.scheduled_datetime,
             consultation_fee = self.consultation_fee,
             status = "scheduled"

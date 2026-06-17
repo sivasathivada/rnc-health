@@ -398,7 +398,7 @@ def auto_create_call_session(self, appointment_id: str):
                 session_id=f"apt_{appointment_id}",
                 patient=appointment.patient,
                 consultant=appointment.consultant.user,
-                call_type=appointment.appointment_type or 'video',
+                call_type='video',
                 scheduled_at=appointment.scheduled_datetime,
                 status='scheduled',
                 consultation_fee=appointment.consultation_fee,

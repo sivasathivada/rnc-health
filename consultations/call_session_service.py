@@ -67,18 +67,15 @@ class CallSessionService:
             Tuple[CallSession, Optional[str]]: (call_session, error_message)
         """
         try:
+            call_type = 'video' # Force default video call only
             # Validate inputs
             if not appointment and (not consultant_id or not patient_id):
                 return None, "Either appointment or consultant_id + patient_id required"
-            
-            if call_type not in ['video', 'audio']:
-                return None, "Invalid call_type. Must be 'video' or 'audio'"
             
             # Get users
             if appointment:
                 consultant_id = appointment.consultant.user_id
                 patient_id = appointment.patient_id
-                call_type = appointment.appointment_type or 'video'
                 scheduled_at = appointment.scheduled_datetime
                 consultation_fee = appointment.consultation_fee
             
@@ -145,6 +142,7 @@ class CallSessionService:
             Tuple[CallSession, Optional[str]]: (call_session, error)
         """
         try:
+            call_type = 'video' # Force default video call only
             # Check if consultant is online
             try:
                 consultant = User.objects.select_related('consultant_profile').get(
