@@ -101,7 +101,7 @@ call_session_urls = [
         name='call-session-list'
     ),
     path(
-        'calls/<str:session_id>/',
+        'calls/<uuid:pk>/',
         ConsultantCallSessionDetailView.as_view(),
         name='call-session-detail'
     ),

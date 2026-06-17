@@ -364,81 +364,124 @@ if DEBUG:
 
 # Production: Use Redis for distributed channel layer (multiple processes, scalable)
 # 1. Keep your clean REDIS_URL environment variable string readout
-
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
+
+
 # 2. Pass it directly as a raw host string list without any dictionary wrapping
+
 CHANNEL_LAYERS = {
+
     "default": {
+
         "BACKEND": "channels_redis.core.RedisChannelLayer",
+
         "CONFIG": {
+
             "hosts": [REDIS_URL],
-            "capacity": 200,      # Reduced from 1500. Lower memory buffers = fewer operations
-            "expiry": 15,          #Reduced from 60. Drop old messages quickly so Redis doesn't bloat
-            "group_expiry": 3600,
+
+            "capacity": 1500,
+
+            "expiry": 60,
+
+            "group_expiry": 86400,
+
         },
+
     },
+
 }
 
+
+
 # ==================== CELERY CONFIGURATION ====================
+
 # Celery for asynchronous background tasks and scheduled jobs
 
-# 1. Grab the complete production connection string directly if available, 
+
+
+# 1. Grab the complete production connection string directly if available,
+
 CELERY_BROKER_URL = config(
-    'REDIS_URL', 
+
+    'REDIS_URL',
+
     default=f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default=6379)}/0"
+
 )
 
 
+
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+
+
 # THE CORRECT STRING FOR REDIS-PY: Use lowercase 'required'
+
 CELERY_BROKER_USE_SSL = {
+
     'ssl_cert_reqs': 'required',                   # Fixes the Redis Error instantly
+
     'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'  # Kept intact for Render's OS environment
+
 }
+
 
 CELERY_REDIS_BACKEND_USE_SSL = CELERY_BROKER_USE_SSL
 
-# This tells Celery to check for tasks every 5 seconds instead of multiple times a second.
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'polling_interval': 5.0,
-}
 
-#Stop storing task execution results in Redis unless absolutely mandatory.
-# If your backend tasks just execute logic (like cleaning up calls) and don't return data frontend clients need to consume, you can safely ignore results to reduce Redis load and costs.
-CELERY_TASK_IGNORE_RESULT = True  
-CELERY_RESULT_BACKEND = None     # If IGNORE_RESULT is True, we don't need a backend database connection
 
 # Celery settings
+
 CELERY_ACCEPT_CONTENT = ['json']
+
 CELERY_TASK_SERIALIZER = 'json'
+
 CELERY_RESULT_SERIALIZER = 'json'
+
 CELERY_TIMEZONE = 'UTC'
 
-# Disable background worker synchronization noise (Gossip/Mingo)
-# This prevents workers from constantly chatting with each other via Redis
-CELERY_WORKER_GOSSIP = False
-CELERY_WORKER_MINGO = False
-CELERY_WORKER_SEND_TASK_EVENTS = False
+
 
 # Task settings
+
 CELERY_TASK_TRACK_STARTED = True
+
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes hard limit
+
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes soft limit
+
 CELERY_TASK_IGNORE_RESULT = False
 
+
+
 # Celery Beat Settings (Scheduled Tasks)
+
 CELERY_BEAT_SCHEDULE = {
+
     # Clean up stale call sessions every 10 minutes
+
     'cleanup-stale-calls': {
+
         'task': 'consultations.cleanup_stale_calls',
+
         'schedule': 600.0,  # 10 minutes
+
     },
+
 }
 
+
+
 # Celery worker settings
+
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 500
+
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+
 CELERY_WORKER_LOG_FORMAT = '[%(levelname)s/%(processName)s] %(message)s'
+
+
 
 # ==================== LOGGING CONFIGURATION ====================
 # Reduces terminal spam from channels and daphne WebSocket messages
