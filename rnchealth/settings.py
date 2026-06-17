@@ -364,7 +364,6 @@ if DEBUG:
 
 # Production: Use Redis for distributed channel layer (multiple processes, scalable)
 # 1. Keep your clean REDIS_URL environment variable string readout
-1. Grab the raw environment URL string
 RAW_REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
 # 2. FORCE CLEANING: Convert rediss:// to redis:// to bypass Render/Railway SSL conflicts
