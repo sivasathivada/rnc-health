@@ -364,90 +364,73 @@ if DEBUG:
 
 # Production: Use Redis for distributed channel layer (multiple processes, scalable)
 # 1. Keep your clean REDIS_URL environment variable string readout
+1. Grab the raw environment URL string
+RAW_REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
-REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
+# 2. FORCE CLEANING: Convert rediss:// to redis:// to bypass Render/Railway SSL conflicts
+if RAW_REDIS_URL.startswith("rediss://"):
+    REDIS_URL = RAW_REDIS_URL.replace("rediss://", "redis://", 1)
+else:
+    REDIS_URL = RAW_REDIS_URL
 
 # ==================== DJANGO CHANNELS CONFIGURATION ====================
 CHANNEL_LAYERS = {
     "default": {
-        # COST FIX: If your channels package is up to date, consider changing this 
-        # to "channels_redis.pubsub.RedisPubSubChannelLayer" to drastically cut down polling requests.
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
         "CONFIG": {
             "hosts": [REDIS_URL],
-            "capacity": 200,  # OPTIMIZATION: Reduced from 1500. Lower memory buffers = fewer operations
-            "expiry": 15,     # OPTIMIZATION: Reduced from 60. Drop old messages quickly so Redis doesn't bloat
-            "group_expiry": 3600, # OPTIMIZATION: Reduced from 86400 (24h) to 1 hour. Cleans up stale groups fast
-            # ADD THIS TO PREVENT DAPHNE HANDSHAKE HANGS:
+            "capacity": 200,
+            "expiry": 15,
+            "group_expiry": 3600,
             "redis_config": {
-                "socket_timeout": 5,
-                "socket_connect_timeout": 5,
+                "socket_timeout": 10,
+                "socket_connect_timeout": 10,
             }
-
         },
     },
 }
 
 # ==================== CELERY CONFIGURATION ====================
-CELERY_BROKER_URL = config(
-    'REDIS_URL', 
-    default=f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default=6379)}/0"
-)
+# Force the clean redis:// URL into the broker layout
+CELERY_BROKER_URL = REDIS_URL
 
-# SSL Configurations (Kept perfectly intact for Render's OS environment)
-CELERY_BROKER_USE_SSL = {
-    'ssl_cert_reqs': 'required',
-    'ssl_ca_certs': '/etc/ssl/certs/ca-certificates.crt'
-}
+# ABSOLUTE SAFETY TRAP: Explicitly disable Celery SSL
+CELERY_BROKER_USE_SSL = False
 
-# OPTIMIZATION: Slow down Celery's aggressive background polling loop!
-# Protect Celery from hanging indefinitely on network proxies
+# Safe non-blocking connection rules
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     'polling_interval': 5.0,
-    'socket_timeout': 5,
-    'socket_connect_timeout': 5,
+    'socket_timeout': 10,
+    'socket_connect_timeout': 10,
 }
-# CRITICAL COST FIX: Stop storing task execution results in Redis unless absolutely mandatory.
-# If your backend tasks just execute logic (like cleaning up calls) and don't return data 
-# to the frontend via task IDs, ignore the results entirely!
+
 CELERY_TASK_IGNORE_RESULT = True  
-CELERY_RESULT_BACKEND = None     # If IGNORE_RESULT is True, we don't need a backend database connection
+CELERY_RESULT_BACKEND = None     
 
-# If you ABSOLUTELY need results for specific tasks, keep this line but override it 
-# inside individual tasks using @shared_task(ignore_result=False)
-# If keeping the backend, add an expiry to prevent endless storage:
-# CELERY_RESULT_EXPIRE = 300  # Remove results after 5 minutes
-
-# Celery performance tweaks for single-core / low-RAM servers
+# Performance tweaks for single-core setup
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
-# Disable background worker synchronization noise (Gossip/Mingo)
-# This prevents workers from constantly chatting with each other via Redis
 CELERY_WORKER_GOSSIP = False
 CELERY_WORKER_MINGO = False
 CELERY_WORKER_SEND_TASK_EVENTS = False
 
-# Task limits
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  
 
-# Celery Beat Settings (Scheduled Tasks)
 CELERY_BEAT_SCHEDULE = {
     'cleanup-stale-calls': {
         'task': 'consultations.cleanup_stale_calls',
-        'schedule': 600.0,  # 10 minutes is a great balance
+        'schedule': 600.0,
     },
 }
 
-# Celery worker settings
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 500
 CELERY_WORKER_LOG_FORMAT = '[%(levelname)s/%(processName)s] %(message)s'
-
 # ==================== LOGGING CONFIGURATION ====================
 # Reduces terminal spam from channels and daphne WebSocket messages
 
