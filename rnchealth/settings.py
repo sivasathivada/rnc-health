@@ -364,8 +364,6 @@ if DEBUG:
 
 # Production: Use Redis for distributed channel layer (multiple processes, scalable)
 # 1. Keep your clean REDIS_URL environment variable string readout
-import os
-from decouple import config  # assuming you use python-decouple or similar
 
 REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379")
 
@@ -380,6 +378,12 @@ CHANNEL_LAYERS = {
             "capacity": 200,  # OPTIMIZATION: Reduced from 1500. Lower memory buffers = fewer operations
             "expiry": 15,     # OPTIMIZATION: Reduced from 60. Drop old messages quickly so Redis doesn't bloat
             "group_expiry": 3600, # OPTIMIZATION: Reduced from 86400 (24h) to 1 hour. Cleans up stale groups fast
+            # ADD THIS TO PREVENT DAPHNE HANDSHAKE HANGS:
+            "redis_config": {
+                "socket_timeout": 5,
+                "socket_connect_timeout": 5,
+            }
+
         },
     },
 }
@@ -397,11 +401,12 @@ CELERY_BROKER_USE_SSL = {
 }
 
 # OPTIMIZATION: Slow down Celery's aggressive background polling loop!
-# This tells Celery to check for tasks every 5 seconds instead of multiple times a second.
+# Protect Celery from hanging indefinitely on network proxies
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     'polling_interval': 5.0,
+    'socket_timeout': 5,
+    'socket_connect_timeout': 5,
 }
-
 # CRITICAL COST FIX: Stop storing task execution results in Redis unless absolutely mandatory.
 # If your backend tasks just execute logic (like cleaning up calls) and don't return data 
 # to the frontend via task IDs, ignore the results entirely!
