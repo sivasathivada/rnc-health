@@ -196,7 +196,7 @@ class ConsultantService:
                 return None, "User is not a patient"
             
             consultant = ConsultantProfile.objects.select_related('user').get(id = consultant_id,
-                        user_role = "consultant")
+                        user__role = "consultant")
             
             review, created = ConsultantReview.objects.update_or_create(consultant = consultant,
                             patient = patient_user, defaults = {'rating' : rating,
