@@ -242,7 +242,7 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     """Serializer for prescriptions"""
     consultant_name = serializers.CharField(source="consultant.full_name", read_only=True)
     patient_name = serializers.CharField(source="patient.full_name", read_only=True)
-    session_id = serializers.CharField(source="call_session.session_id", read_only=True)
+    session_id = serializers.CharField(source="call_seesion.session_id", read_only=True)
 
     class Meta:
         model = Prescription
@@ -292,8 +292,9 @@ class PrescriptionCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         call_session = validated_data.pop('call_session_id')
+        # NOTE: model field is 'call_seesion' (typo in original model, must match exactly)
         return Prescription.objects.create(
-            call_session=call_session,
+            call_seesion=call_session,
             consultant=self.context['request'].user,
             patient=call_session.patient,
             **validated_data

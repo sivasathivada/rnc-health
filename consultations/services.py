@@ -308,7 +308,7 @@ class PrescriptionService:
 
         with transaction.atomic():
             prescription = Prescription.objects.create(
-                call_session=call_session,
+                call_seesion=call_session,   # model field has typo 'call_seesion'
                 consultant=consultant,
                 patient=call_session.patient,
                 **data
