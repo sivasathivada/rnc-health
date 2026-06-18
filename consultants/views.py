@@ -2,7 +2,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
@@ -27,6 +27,7 @@ class ConsultantPagination(PageNumberPagination):
     max_page_size = 50
     
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def consultant_list(request):
     """ Get list of consultants with filtering and pagination """
     
@@ -58,6 +59,7 @@ def consultant_list(request):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def consultant_detail(request, consultant_id):
     """ Get detailed consultant information """
     consultant, error = ConsultantService.get_consultant_details(consultant_id)
@@ -70,6 +72,7 @@ def consultant_detail(request, consultant_id):
     
     
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def specialities_list(request):
     """ Get list of all active specialities """
     specialities = Speciality.objects.filter(is_active = True)
