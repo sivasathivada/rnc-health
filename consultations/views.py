@@ -40,6 +40,8 @@ class IsPatient(permissions.BasePermission):
         )
 
 
+
+
 class ConsultantAppointmentListView(generics.ListAPIView):
     """List appointments for a consultant"""
     serializer_class = AppointmentSerializer
@@ -412,3 +414,35 @@ class ConsultantSpecificSlotDeleteView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return AppointmentSlot.objects.filter(consultant=self.request.user.consultant_profile)
+
+
+class PatientPrescriptionListView(generics.ListAPIView):
+    """
+    Patient-only endpoint: returns prescriptions issued to the authenticated patient.
+    Optional query param:  ?session_id=<UUID-or-session_id-string>
+    to filter prescriptions linked to a specific call session.
+    Only prescriptions for completed call sessions are returned so the patient
+    cannot see prescriptions before the call ends.
+    """
+    serializer_class = PrescriptionSerializer
+    permission_classes = [permissions.IsAuthenticated, IsPatient]
+
+    def get_queryset(self):
+        patient = self.request.user
+        # Base: only the patient's own prescriptions, from completed sessions
+        qs = Prescription.objects.filter(
+            patient=patient,
+            call_seesion__status='completed',   # note: model has typo 'call_seesion'
+        ).select_related('consultant', 'patient', 'call_seesion').order_by('-created_at')
+
+        session_param = self.request.query_params.get('session_id')
+        if session_param:
+            # Try matching against the UUID primary key first, then the session_id string
+            try:
+                import uuid as _uuid
+                _uuid.UUID(str(session_param))          # valid UUID?
+                qs = qs.filter(call_seesion__id=session_param)
+            except (ValueError, AttributeError):
+                qs = qs.filter(call_seesion__session_id=session_param)
+
+        return qs

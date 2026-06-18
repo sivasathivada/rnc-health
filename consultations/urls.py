@@ -19,7 +19,7 @@ from .views import (
     # Prescription Views
     ConsultantPrescriptionListView,
     ConsultantPrescriptionDetailView,
-    
+    PatientPrescriptionListView,
 )
 
 
@@ -110,6 +110,7 @@ call_session_urls = [
 
 # Prescription URLs
 prescription_urls = [
+    # Consultant: list & create prescriptions
     path(
         'prescriptions/',
         ConsultantPrescriptionListView.as_view(),
@@ -119,6 +120,12 @@ prescription_urls = [
         'prescriptions/<uuid:pk>/',
         ConsultantPrescriptionDetailView.as_view(),
         name='prescription-detail'
+    ),
+    # Patient: view their received prescriptions (optionally filtered by session)
+    path(
+        'prescriptions/my/',
+        PatientPrescriptionListView.as_view(),
+        name='patient-prescription-list'
     ),
 ]
 
